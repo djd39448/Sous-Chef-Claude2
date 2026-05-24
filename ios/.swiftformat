@@ -1,0 +1,5 @@
+# SwiftFormat configuration for the sous-chef-ios app (CODING_STANDARDS.md dc-03).
+# Mirrors the DevCore desktop shell's config so one rule set governs all Swift
+# in the org. Only the Swift version is pinned; everything else is default.
+--swiftversion 6.0
+--exclude .build,DerivedData,.swiftpm,SousChef.xcodeproj

@@ -1,0 +1,17 @@
+# SwiftLint configuration for the sous-chef-ios app (CODING_STANDARDS.md dc-03).
+# Mirrors the DevCore desktop shell's config — the default rule set governs.
+# Build/derived directories are excluded so generated code is never linted.
+excluded:
+  - .build
+  - SousChefKit/.build
+  - DerivedData
+  - .swiftpm
+  - SousChefKit/.swiftpm
+  - SousChef.xcodeproj
+
+# `trailing_comma` is owned by SwiftFormat (the `trailingCommas` rule); its
+# default adds trailing commas in multi-line collection literals. Leaving
+# SwiftLint's rule on creates an unresolvable conflict. SwiftFormat is the
+# single source of truth for trailing-comma style.
+disabled_rules:
+  - trailing_comma
