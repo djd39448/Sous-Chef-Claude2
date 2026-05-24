@@ -14,7 +14,11 @@ import (
 
 // requiredEnv is the set of env vars Load demands. A test that wants a
 // successful Load sets every one to a non-empty placeholder so the missing-
-// var path is not what's under test.
+// var path is not what's under test. The placeholder DB URL contains a
+// "user:pass" segment so gosec flags it as a credential — it is not, just
+// a syntactically-valid Postgres DSN for test fixtures.
+//
+//nolint:gosec // G101 false positive: test fixture values, no real credentials
 var requiredEnv = map[string]string{
 	"SUPABASE_JWKS_URL":         "https://example.supabase.co/auth/v1/.well-known/jwks.json",
 	"SUPABASE_ISSUER":           "https://example.supabase.co/auth/v1",

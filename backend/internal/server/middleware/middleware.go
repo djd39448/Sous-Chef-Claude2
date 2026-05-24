@@ -132,7 +132,8 @@ func WithAccessLog(logger *slog.Logger, next http.Handler) http.Handler {
 // behavior rather than treating it as an error.
 func WithPanicRecovery(logger *slog.Logger, next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		defer func() {
+		defer func() { //nolint:contextcheck // closure intentionally captures r.Context() from the request scope
+
 			recovered := recover()
 			if recovered == nil {
 				return
