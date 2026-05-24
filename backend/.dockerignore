@@ -1,0 +1,13 @@
+# .dockerignore — keep the build context small and reproducible.
+# Anything that does not need to ship into the image stays out.
+
+bin/
+coverage.out
+coverage.html
+*.test
+*.prof
+.DS_Store
+.idea/
+.vscode/
+.env
+.env.*

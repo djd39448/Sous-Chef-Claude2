@@ -1,0 +1,21 @@
+# golangci-lint configuration for the sous-chef-ios backend track.
+# The linter set is mandated by CODING_STANDARDS.md dc-02 (DevCore's coding
+# standard, which binds this repo). errcheck, govet, ineffassign, staticcheck,
+# and unused are golangci-lint defaults; the linters below are the additional
+# ones dc-02 requires.
+version: "2"
+
+linters:
+  enable:
+    - bodyclose
+    - contextcheck
+    - errorlint
+    - gocritic
+    - gosec
+    - nilerr
+    - noctx
+    - revive
+
+formatters:
+  enable:
+    - gofumpt
