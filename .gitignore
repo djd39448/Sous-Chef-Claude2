@@ -1,0 +1,55 @@
+# .gitignore for Sous Chef Claude2
+# Track-specific ignores are kept here at the root so all three tracks
+# share one source of truth. Each section below is owned by one track.
+
+# ───────── macOS ─────────
+.DS_Store
+.AppleDouble
+.LSOverride
+Icon?
+._*
+
+# ───────── editors / IDEs ─────────
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# ───────── secrets ─────────
+.env
+.env.*
+!.env.example
+*.pem
+*.p8
+*.p12
+secrets/
+
+# ───────── backend / Go ─────────
+backend/bin/
+backend/dist/
+backend/coverage.out
+backend/coverage.html
+vendor/
+*.test
+*.prof
+
+# ───────── data / Supabase ─────────
+data/supabase/.branches/
+data/supabase/.temp/
+data/.local/
+
+# ───────── ios / Xcode ─────────
+ios/build/
+ios/DerivedData/
+ios/.swiftpm/
+ios/*.xcworkspace/xcuserdata/
+ios/*.xcodeproj/xcuserdata/
+ios/*.xcodeproj/project.xcworkspace/xcuserdata/
+*.xcuserstate
+xcuserdata/
+
+# ───────── node (if any web tooling sneaks in) ─────────
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
