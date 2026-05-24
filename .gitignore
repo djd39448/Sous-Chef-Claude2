@@ -42,6 +42,9 @@ data/.local/
 ios/build/
 ios/DerivedData/
 ios/.swiftpm/
+ios/.build/
+ios/SousChefKit/.build/
+ios/SousChefKit/.swiftpm/
 ios/*.xcworkspace/xcuserdata/
 ios/*.xcodeproj/xcuserdata/
 ios/*.xcodeproj/project.xcworkspace/xcuserdata/
