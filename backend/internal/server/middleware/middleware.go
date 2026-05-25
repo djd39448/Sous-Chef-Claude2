@@ -132,8 +132,12 @@ func WithAccessLog(logger *slog.Logger, next http.Handler) http.Handler {
 // behavior rather than treating it as an error.
 func WithPanicRecovery(logger *slog.Logger, next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		defer func() { //nolint:contextcheck // closure intentionally captures r.Context() from the request scope
-
+		// Reviewer-pass 0001 §3 Backend: the linter wants the deferred
+		// closure to take a ctx parameter. It cannot — `defer func() { ... }()`
+		// runs with no arguments. The closure captures `r` from the outer
+		// http.HandlerFunc and reads `r.Context()` only for logging (no
+		// downstream ctx-aware call), so the rule's intent does not apply.
+		defer func() { //nolint:contextcheck // deferred closure takes no parameters by design; r is captured for log-only ctx access
 			recovered := recover()
 			if recovered == nil {
 				return

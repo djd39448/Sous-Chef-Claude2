@@ -30,15 +30,33 @@
 --     have one, and defer realistic CFO/plan/cookbook seeding to the
 --     follow-up phase.
 
--- Guard: only seed when running against the local stack. We detect this
--- by checking that no production-only domain has been configured. A more
--- robust guard (per track-data §5 task 19) will live in the seed script
--- that follows; this one-liner is enough to fail loud if seed.sql is
--- ever pointed at a real environment by mistake.
+-- Guard: only seed when the caller explicitly declares the local
+-- environment. The previous guard checked
+-- `current_setting('app.environment', true) = 'production'` which is
+-- a no-op — that setting returns NULL when unset, and NULL = 'production'
+-- is always false. Reviewer-pass 0001 flagged this as a dc-00 violation:
+-- "a guard that doesn't guard misleads readers."
+--
+-- The new contract is an OPT-IN: the caller must pass
+-- `seed_environment=local` via the PGOPTIONS env var. The Makefile's
+-- `reset` target sets this automatically, so `make reset` Just Works.
+-- A bare `supabase db reset` (no PGOPTIONS) aborts loud. A developer
+-- who runs `psql -f seed.sql` against a cloud Supabase project by
+-- mistake aborts loud as well — they would have to deliberately add
+-- `--set seed_environment=local` to defeat the guard, which is no
+-- longer "by mistake."
+--
+-- Why not key off the server's address? `inet_server_addr()` returns
+-- the container's IP under Docker (not NULL), so a check like
+-- `inet_server_addr() IS NULL` would block `supabase db reset`
+-- locally too. Distinguishing local from cloud by IP is brittle.
+-- Caller-asserted intent is the more honest gate.
 do $$
+declare
+  declared_environment text := current_setting('seed_environment', true);
 begin
-  if current_setting('app.environment', true) = 'production' then
-    raise exception 'seed.sql refused: app.environment=production';
+  if declared_environment is null or declared_environment <> 'local' then
+    raise exception 'seed.sql refused: PGOPTIONS must include "-c seed_environment=local" (run via `make reset`, or set PGOPTIONS yourself).';
   end if;
 end$$;
 

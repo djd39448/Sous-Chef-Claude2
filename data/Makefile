@@ -59,7 +59,11 @@ reset:
 	  echo "supabase CLI not installed."; \
 	  exit 1; \
 	fi
-	supabase db reset
+	# Set PGOPTIONS so `seed.sql`'s "are you really running this locally?"
+	# guard passes (see seed.sql for why). A bare `supabase db reset`
+	# without this flag aborts on the guard, which is what we want — the
+	# canonical entry point is `make reset`, not the raw CLI.
+	PGOPTIONS="-c seed_environment=local" supabase db reset
 
 # `name` must be supplied: `make diff name=add_food_items_email_index`.
 # A bare `make diff` errors out so we don't accidentally emit a migration
