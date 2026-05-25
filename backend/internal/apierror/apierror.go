@@ -5,6 +5,8 @@
 // handler builds an error response by hand.
 //
 // Depends on: net/http, encoding/json, log/slog (standard library only).
+// The slog dependency is used only on the encoder-error fallback path —
+// the happy path never logs (see Write's docstring).
 // Depended on by: every HTTP handler under internal/api, the auth
 // middleware (internal/server/middleware), and the SSE writer (which needs
 // to translate a typed terminal error into the `error` SSE event).
@@ -71,9 +73,16 @@ type envelope struct {
 // from the response. The Content-Type header is set before WriteHeader so
 // the body is parseable as JSON by every client.
 //
-// Write deliberately does not log. The caller (a handler or middleware)
-// holds the request-scoped slog.Logger and the wrapped error chain; logging
-// at this layer would lose both. Pattern: the caller logs, then calls Write.
+// On the **happy path**, Write does not log. The caller (a handler or
+// middleware) holds the request-scoped slog.Logger and the wrapped error
+// chain; logging at this layer would lose both. Pattern: the caller logs,
+// then calls Write.
+//
+// On the **encoder-error path** (json.Encode failed after WriteHeader, which
+// in practice means the client hung up), Write falls back to
+// slog.Default() because no caller-supplied logger is in scope at that
+// point. The headers are already on the wire and there is no useful
+// recovery; the log line is the only remaining signal.
 func Write(w http.ResponseWriter, status int, code Code, details any) {
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	w.WriteHeader(status)

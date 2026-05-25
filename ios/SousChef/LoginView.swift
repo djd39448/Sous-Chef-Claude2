@@ -27,16 +27,39 @@ enum LoginFlowStep: Hashable {
 }
 
 struct LoginView: View {
-    /// onSignInSucceeded is the upward callback for the (eventually) real
-    /// sign-in path. In Week 1 it is wired to the app's `isSignedIn` toggle
-    /// only via the mock-bypass route described below.
+    /// onSignInSucceeded is the upward callback the app target uses to flip
+    /// its `isSignedIn` state. In Week 1 this callback is **never invoked** —
+    /// the mocked "Send code" and "Verify" buttons show an alert and do not
+    /// transition the app to the signed-in state. The callback parameter
+    /// exists so Week 2 (task A4 of `track-ios.md` §5) can wire the real
+    /// `signInWithOTP` success path without changing this struct's signature.
     let onSignInSucceeded: () -> Void
 
-    /// step is local state for which stage of the flow shows.
-    @State private var step: LoginFlowStep = .enterEmail
+    /// step is local state for which stage of the flow shows. The initial
+    /// value is .enterEmail; previews override via the explicit initializer
+    /// below so each key state (per dc-07) gets its own #Preview.
+    @State private var step: LoginFlowStep
     @State private var email = ""
     @State private var code = ""
     @State private var mockAlertVisible = false
+
+    /// The standard initializer — the app target always enters at
+    /// `.enterEmail`. The `initialStep` initializer below is for previews
+    /// only; production code never calls it.
+    init(onSignInSucceeded: @escaping () -> Void) {
+        self.onSignInSucceeded = onSignInSucceeded
+        _step = State(initialValue: .enterEmail)
+    }
+
+    /// Preview-only initializer — lets a #Preview render the code-entry step
+    /// directly so dc-07's "every view ships #Previews for key states" is
+    /// honoured for both halves of the flow. Marked internal (no `public`
+    /// or `private`) because previews live in the same module.
+    init(onSignInSucceeded: @escaping () -> Void, initialStep: LoginFlowStep) {
+        self.onSignInSucceeded = onSignInSucceeded
+        _step = State(initialValue: initialStep)
+        _email = State(initialValue: initialStep == .enterCode ? "dave@example.com" : "")
+    }
 
     var body: some View {
         NavigationStack {
@@ -138,4 +161,12 @@ struct LoginView: View {
 
 #Preview("Login — email step") {
     LoginView(onSignInSucceeded: {})
+}
+
+// The code-entry step is a distinct key state with its own affordances
+// (numeric keypad, oneTimeCode content type, the Back button). dc-07 calls
+// for a #Preview per key state; the preview-only initializer above lets us
+// render this half without simulating taps.
+#Preview("Login — code step") {
+    LoginView(onSignInSucceeded: {}, initialStep: .enterCode)
 }
