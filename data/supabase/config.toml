@@ -97,6 +97,12 @@ otp_expiry = 600
 # Sign in with Apple — provisioning is deferred to Dave (Apple Developer
 # account + .p8 key). Track-data §5 tasks 2 and 17 wire this up against the
 # real cloud projects. For local dev, the provider is disabled.
+#
+# Credentials (Service ID, Team ID, Key ID, .p8 private key) NEVER live in
+# this file. The Supabase Dashboard (per-project) is the only place those
+# values are stored — config.toml is committed to the repo and would expose
+# them in git history. For local dev the empty strings stay; for cloud
+# environments the dashboard owns them.
 [auth.external.apple]
 enabled = false
 client_id = ""
