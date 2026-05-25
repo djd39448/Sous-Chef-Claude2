@@ -1,13 +1,14 @@
 // Package server constructs the HTTP surface of the sous-chef-api binary.
 // It owns the route mux, the middleware chain (request ID, slog logging,
-// panic recovery), and the unauthenticated /healthz endpoint. Resource
-// handlers (conversations, meal plans, cookbook, etc.) live in
-// internal/api and are mounted onto the mux returned by Handler — server
-// does not contain business logic.
+// panic recovery, JWT auth), and the unauthenticated /healthz endpoint.
+// Resource handlers (conversations, meal plans, cookbook, etc.) live in
+// internal/api and are mounted onto the authenticated sub-mux exposed by
+// MountAuth — server does not contain business logic.
 //
 // Depends on: internal/buildinfo (the /healthz response surface),
 // internal/server/middleware (the request-ID, access-log, and panic-
-// recovery chain), log/slog (the request-scoped logger).
+// recovery chain), internal/auth (the JWT verifier and middleware),
+// log/slog (the request-scoped logger).
 // Depended on by: cmd/sous-chef-api, which constructs a *Server at boot
 // and calls Serve to block until shutdown.
 // Why it exists: the HTTP plumbing — listener lifecycle, signal handling,
@@ -25,6 +26,7 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/djd39448/Sous-Chef-Claude2/backend/internal/auth"
 	"github.com/djd39448/Sous-Chef-Claude2/backend/internal/buildinfo"
 	"github.com/djd39448/Sous-Chef-Claude2/backend/internal/server/middleware"
 )
@@ -44,20 +46,61 @@ const (
 )
 
 // Server is the wired-together HTTP service. It is constructed once at boot
-// and serves until its context is cancelled.
+// and serves until its context is cancelled. The verifier and authRoutes
+// fields are optional at construction so a foundation-only deploy (Phase A)
+// still boots; from Phase B onwards every production boot supplies both.
 type Server struct {
-	logger *slog.Logger
+	logger     *slog.Logger
+	verifier   *auth.Verifier
+	authRoutes []authRoute
+}
+
+// authRoute is one method+path+handler triple destined for the
+// JWT-protected sub-mux. The slice is held on the Server and registered
+// when Handler() runs so MountAuth callers do not have to worry about
+// ordering relative to the handler construction.
+type authRoute struct {
+	pattern string
+	handler http.Handler
 }
 
 // New builds a Server with the given logger. The logger is the root of the
 // request-scoped logging tree — every request derives a child logger that
 // attaches `request_id` (and, post-auth, `user_id`). A nil logger is
 // rejected at construction time because the entire service depends on it.
-func New(logger *slog.Logger) (*Server, error) {
+//
+// The optional opts let main.go inject a JWT verifier (per contract §2.2
+// + ADR-0011); without one no /api/kitchen route can be mounted. The
+// verifier MAY be nil in tests that only exercise /healthz.
+func New(logger *slog.Logger, opts ...Option) (*Server, error) {
 	if logger == nil {
 		return nil, errors.New("server.New: logger is required")
 	}
-	return &Server{logger: logger}, nil
+	s := &Server{logger: logger}
+	for _, opt := range opts {
+		opt(s)
+	}
+	return s, nil
+}
+
+// Option is a server construction option. Functional options keep the
+// signature stable as later phases add the data pool, the AI client, etc.
+type Option func(*Server)
+
+// WithVerifier installs the JWT verifier used by the auth middleware on
+// every /api/kitchen/* route. Required for any production boot; tests that
+// only need /healthz can omit it.
+func WithVerifier(v *auth.Verifier) Option {
+	return func(s *Server) { s.verifier = v }
+}
+
+// MountAuth registers a handler under the JWT-protected sub-mux. The
+// pattern follows the ServeMux 1.22+ method+path syntax (`"GET
+// /api/kitchen/ingredients"`). Calling MountAuth after Handler() has been
+// called is allowed but only takes effect on the NEXT Handler() call —
+// tests that mount routes inline must call Handler() last.
+func (s *Server) MountAuth(pattern string, handler http.Handler) {
+	s.authRoutes = append(s.authRoutes, authRoute{pattern: pattern, handler: handler})
 }
 
 // Handler returns the http.Handler with every route mounted and the
@@ -73,9 +116,28 @@ func (s *Server) Handler() http.Handler {
 	// to return `{"status":"ok"}` would be wasted work.
 	mux.HandleFunc("GET /healthz", s.handleHealthz)
 
-	// Future phases mount their handlers here. Phase B (auth middleware
-	// and JWT-protected routes) and Phase D+ (the kitchen handlers) will
-	// add a second sub-mux protected by the auth chain.
+	// Authenticated routes share a sub-mux behind the JWT middleware. The
+	// sub-mux uses the same ServeMux 1.22+ method+path patterns; the auth
+	// middleware wraps the *whole* sub-mux, so a contract §2.3 401 is
+	// emitted before any handler runs.
+	if len(s.authRoutes) > 0 {
+		authMux := http.NewServeMux()
+		for _, r := range s.authRoutes {
+			authMux.Handle(r.pattern, r.handler)
+		}
+		if s.verifier == nil {
+			// dc-02: a misconfigured boot must fail loudly. Returning a
+			// 500-handler from Handler() would let the binary serve
+			// /healthz green while every protected route silently 500s,
+			// which would mask the configuration bug. Panic at
+			// Handler-construction time instead — main.go calls Handler
+			// once at boot, so this surfaces inside the run() function's
+			// error return path.
+			panic("server: MountAuth called without WithVerifier")
+		}
+		mux.Handle("/api/kitchen/", auth.Middleware(s.verifier, s.logger)(authMux))
+	}
+
 	return s.withBaseMiddleware(mux)
 }
 
