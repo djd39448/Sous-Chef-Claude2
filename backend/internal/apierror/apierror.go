@@ -4,7 +4,9 @@
 // Every handler that needs to reject a request calls into this package; no
 // handler builds an error response by hand.
 //
-// Depends on: net/http, encoding/json, log/slog (standard library only).
+// Depends on: net/http, encoding/json, log/slog (standard library only —
+// slog is used ONLY for the encoding-failure fallback in Write, never to
+// log the contract-level error envelope itself; the caller logs that).
 // Depended on by: every HTTP handler under internal/api, the auth
 // middleware (internal/server/middleware), and the SSE writer (which needs
 // to translate a typed terminal error into the `error` SSE event).
