@@ -20,11 +20,16 @@
 		BFEB830D04003C7291FCAC71 /* CalendarTabView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6EEAA2EFC56360ADBBAB8698 /* CalendarTabView.swift */; };
 		C3900A5FE31796D382AC2174 /* Auth in Frameworks */ = {isa = PBXBuildFile; productRef = F8D93DF718D7D3A27A9C1D92 /* Auth */; };
 		CCA2BC2B8FB8D1FA0AFD744C /* LoginView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 901819A0A834ADB20533248D /* LoginView.swift */; };
+		D6EACE52E83E589268AB7E9F /* IngredientsModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3D639F415EE965DE9FE2410C /* IngredientsModel.swift */; };
 		F665452AA36B28D5A0EAD8E7 /* ChatTabView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 97FFDB3D74419DD056CFAF4E /* ChatTabView.swift */; };
+		FD7294B7FA34EA00AB7A866E /* IngredientsRow.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0805A4607420E01D196F3592 /* IngredientsRow.swift */; };
+		FDA42252BB5C88A73B161DF8 /* IngredientsListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FD422E153782DDE1682A7E2F /* IngredientsListView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		0805A4607420E01D196F3592 /* IngredientsRow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IngredientsRow.swift; sourceTree = "<group>"; };
 		09AB7C22BEA4AF8439F4C6AA /* SousChefKit */ = {isa = PBXFileReference; lastKnownFileType = folder; name = SousChefKit; path = SousChefKit; sourceTree = SOURCE_ROOT; };
+		3D639F415EE965DE9FE2410C /* IngredientsModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IngredientsModel.swift; sourceTree = "<group>"; };
 		4F63F5EC8FECAC9EE5BBB18F /* RootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RootView.swift; sourceTree = "<group>"; };
 		6EEAA2EFC56360ADBBAB8698 /* CalendarTabView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CalendarTabView.swift; sourceTree = "<group>"; };
 		8B59023F83AC40931E17FD96 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
@@ -36,6 +41,7 @@
 		DB75308032FE1927116E2BFC /* PlaceholderTabContent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlaceholderTabContent.swift; sourceTree = "<group>"; };
 		DD47A454C194E11BA2CCAACC /* CookbookTabView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CookbookTabView.swift; sourceTree = "<group>"; };
 		F4CAAFD83336D7AB3ED8F955 /* ShoppingTabView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShoppingTabView.swift; sourceTree = "<group>"; };
+		FD422E153782DDE1682A7E2F /* IngredientsListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IngredientsListView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -69,6 +75,7 @@
 				901819A0A834ADB20533248D /* LoginView.swift */,
 				4F63F5EC8FECAC9EE5BBB18F /* RootView.swift */,
 				CE84C7B699A686B0374196C6 /* SousChefApp.swift */,
+				C68DA021B893298DBA04DE87 /* Features */,
 				8C1F16BDBDB2EF5311273943 /* Tabs */,
 			);
 			path = SousChef;
@@ -80,6 +87,16 @@
 				BD1FE7C3542DE80926979549 /* SousChef.app */,
 			);
 			name = Products;
+			sourceTree = "<group>";
+		};
+		66A4330E2AF4D33B00E744BE /* Plan */ = {
+			isa = PBXGroup;
+			children = (
+				FD422E153782DDE1682A7E2F /* IngredientsListView.swift */,
+				3D639F415EE965DE9FE2410C /* IngredientsModel.swift */,
+				0805A4607420E01D196F3592 /* IngredientsRow.swift */,
+			);
+			path = Plan;
 			sourceTree = "<group>";
 		};
 		749EC9F3AF4C348B12D10451 = {
@@ -102,6 +119,14 @@
 				F4CAAFD83336D7AB3ED8F955 /* ShoppingTabView.swift */,
 			);
 			path = Tabs;
+			sourceTree = "<group>";
+		};
+		C68DA021B893298DBA04DE87 /* Features */ = {
+			isa = PBXGroup;
+			children = (
+				66A4330E2AF4D33B00E744BE /* Plan */,
+			);
+			path = Features;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -175,6 +200,9 @@
 				BFEB830D04003C7291FCAC71 /* CalendarTabView.swift in Sources */,
 				F665452AA36B28D5A0EAD8E7 /* ChatTabView.swift in Sources */,
 				25A5B1C91FAE17F3F76402A5 /* CookbookTabView.swift in Sources */,
+				FDA42252BB5C88A73B161DF8 /* IngredientsListView.swift in Sources */,
+				D6EACE52E83E589268AB7E9F /* IngredientsModel.swift in Sources */,
+				FD7294B7FA34EA00AB7A866E /* IngredientsRow.swift in Sources */,
 				CCA2BC2B8FB8D1FA0AFD744C /* LoginView.swift in Sources */,
 				1971D50C59052596CA8EB69B /* PlaceholderTabContent.swift in Sources */,
 				9D2C4B89BC34CF4E23181964 /* PlanTabView.swift in Sources */,

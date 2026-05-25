@@ -22,7 +22,13 @@ import PackageDescription
 
 let package = Package(
     name: "SousChefKit",
-    platforms: [.iOS(.v17)],
+    // iOS is the production target (track-ios §3 / dc-03 baseline). macOS
+    // is added so `swift test` on the dev host runs against the same
+    // Foundation surface — URLSession.data(for:) requires macOS 12+, and
+    // the Observation framework / @Observable macro the app uses needs
+    // macOS 14+. These are test-time platform floors only; the iOS app
+    // itself ships against iOS 17.
+    platforms: [.iOS(.v17), .macOS(.v14)],
     products: [
         .library(name: "Domain", targets: ["Domain"]),
         .library(name: "API", targets: ["API"]),
