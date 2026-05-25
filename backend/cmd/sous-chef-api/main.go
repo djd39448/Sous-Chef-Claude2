@@ -28,12 +28,16 @@ import (
 	"fmt"
 	"log/slog"
 	"net"
+	"net/http"
 	"os"
 	"os/signal"
 	"syscall"
 
+	"github.com/djd39448/Sous-Chef-Claude2/backend/internal/api"
+	"github.com/djd39448/Sous-Chef-Claude2/backend/internal/auth"
 	"github.com/djd39448/Sous-Chef-Claude2/backend/internal/config"
 	"github.com/djd39448/Sous-Chef-Claude2/backend/internal/server"
+	"github.com/djd39448/Sous-Chef-Claude2/backend/internal/store"
 )
 
 func main() {
@@ -63,13 +67,37 @@ func run() error {
 		slog.String("aws_region", cfg.AWSRegion),
 	)
 
-	srv, err := server.New(logger)
+	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+	defer stop()
+
+	// JWT verifier: fetches the Supabase JWKS at startup. A failure here
+	// fails closed — without a valid keyset, no authenticated route can
+	// serve, so the binary should exit rather than serve 401-everything.
+	verifier, err := auth.NewVerifier(ctx, cfg.SupabaseJWKSURL, cfg.SupabaseIssuer)
+	if err != nil {
+		return fmt.Errorf("constructing JWT verifier: %w", err)
+	}
+
+	// Postgres pool: ADR-0011 puts every transactional handler behind
+	// store.Pool.WithClaims. Open the pool here so a misconfigured boot
+	// (bad DSN, network unreachable) fails immediately rather than on
+	// the first authenticated request.
+	pool, err := store.Open(ctx, cfg.SupabaseDBURL)
+	if err != nil {
+		return fmt.Errorf("opening DB pool: %w", err)
+	}
+	defer pool.Close()
+
+	srv, err := server.New(logger, server.WithVerifier(verifier))
 	if err != nil {
 		return fmt.Errorf("constructing server: %w", err)
 	}
 
-	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
-	defer stop()
+	// Mount Phase 4 Week 2 authenticated routes. Future weeks will grow
+	// this block; for now there is one endpoint exercising the full
+	// JWT → SET LOCAL → RLS chain end to end.
+	ingredients := api.NewIngredientsHandler(api.NewPoolLister(pool, logger), logger)
+	srv.MountAuth("GET /api/kitchen/ingredients", http.HandlerFunc(ingredients.List))
 
 	addr := fmt.Sprintf(":%d", cfg.Port)
 	var lc net.ListenConfig
