@@ -123,8 +123,9 @@ type Querier interface {
 //
 // On a fn error, the rollback is best-effort — if the rollback itself
 // fails, the original fn error is preserved and the rollback failure is
-// attached via errors.Join so neither is lost.
-func (p *Pool) WithClaims(ctx context.Context, userID uuid.UUID, fn func(tx pgx.Tx) error) error {
+// attached via errors.Join so neither is lost. The named return value
+// `err` is what the defer reads and (on rollback failure) writes back.
+func (p *Pool) WithClaims(ctx context.Context, userID uuid.UUID, fn func(tx pgx.Tx) error) (err error) {
 	if p.pool == nil {
 		return errors.New("store.WithClaims: pool is not initialised")
 	}
@@ -135,28 +136,25 @@ func (p *Pool) WithClaims(ctx context.Context, userID uuid.UUID, fn func(tx pgx.
 		return errors.New("store.WithClaims: fn is required")
 	}
 
-	tx, err := p.pool.BeginTx(ctx, pgx.TxOptions{})
-	if err != nil {
-		return fmt.Errorf("store.WithClaims: begin: %w", err)
+	tx, beginErr := p.pool.BeginTx(ctx, pgx.TxOptions{})
+	if beginErr != nil {
+		return fmt.Errorf("store.WithClaims: begin: %w", beginErr)
 	}
 
 	// Best-effort rollback on any return path that doesn't commit. The
 	// deferred call runs after the explicit Commit attempt below; pgx's
 	// Rollback is a no-op on an already-committed transaction and
 	// returns pgx.ErrTxClosed, which we deliberately ignore so the happy
-	// path stays quiet.
+	// path stays quiet. On a real rollback failure, errors.Join attaches
+	// it to the outgoing error so a caller logging `%v` sees both — the
+	// docstring's contract.
 	committed := false
 	defer func() {
 		if committed {
 			return
 		}
 		if rbErr := tx.Rollback(ctx); rbErr != nil && !errors.Is(rbErr, pgx.ErrTxClosed) {
-			// The fn error (if any) is already on its way out; the
-			// rollback failure is a secondary signal. Surface via slog
-			// at the caller; we can't take a logger here without
-			// widening the interface, so we trust the wrapped error
-			// to expose this when the caller logs it.
-			_ = rbErr // silenced: outer error path already covers this
+			err = errors.Join(err, fmt.Errorf("store.WithClaims: rollback: %w", rbErr))
 		}
 	}()
 
